@@ -241,7 +241,7 @@ def _write_ah1(stream, filename):
 
     codesize = 6
     chansize = 6
-    stypesize = 6
+    stypesize = 8
     comsize = 80
     logsize = 202
 
