@@ -239,11 +239,11 @@ def _write_ah1(stream, filename):
     """
     packer = xdrlib.Packer()
 
-    codesize  = 6
-    chansize  = 6
+    codesize = 6
+    chansize = 6
     stypesize = 6
-    comsize   = 80
-    logsize   = 202
+    comsize = 80
+    logsize = 202
 
     for tr in stream:
         if hasattr(tr.stats, 'ah'):
