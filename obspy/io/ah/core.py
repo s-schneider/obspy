@@ -239,26 +239,35 @@ def _write_ah1(stream, filename):
     """
     packer = xdrlib.Packer()
 
+    codesize  = 6
+    chansize  = 6
+    stypesize = 6
+    comsize   = 80
+    logsize   = 202
+
     for tr in stream:
         if hasattr(tr.stats, 'ah'):
-            packer = _pack_trace_with_ah_dict(tr, packer)
+            packer = _pack_trace_with_ah_dict(tr, packer, codesize, chansize,
+                                              stypesize, comsize, logsize)
         else:
-            packer = _pack_trace_wout_ah_dict(tr, packer)
+            packer = _pack_trace_wout_ah_dict(tr, packer, codesize, chansize,
+                                              stypesize, comsize, logsize)
 
     with open(filename, 'wb') as fh:
         fh.write(packer.get_buffer())
 
 
-def _pack_trace_with_ah_dict(tr, packer):
+def _pack_trace_with_ah_dict(tr, packer, codesize, chansize,
+                             stypesize, comsize, logsize):
 
     # station info
-    packer.pack_int(6)
-    packer.pack_fstring(6, tr.stats.station.encode('utf-8'))
-    packer.pack_int(6)
-    packer.pack_fstring(6, tr.stats.channel.encode('utf-8'))
+    packer.pack_int(codesize)
+    packer.pack_fstring(codesize, tr.stats.station.encode('utf-8'))
+    packer.pack_int(chansize)
+    packer.pack_fstring(chansize, tr.stats.channel.encode('utf-8'))
 
-    packer.pack_int(8)
-    packer.pack_fstring(8, tr.stats.ah.station.type.encode('utf-8'))
+    packer.pack_int(stypesize)
+    packer.pack_fstring(stypesize, tr.stats.ah.station.type.encode('utf-8'))
     packer.pack_float(tr.stats.ah.station.latitude)
     packer.pack_float(tr.stats.ah.station.longitude)
     packer.pack_float(tr.stats.ah.station.elevation)
@@ -308,8 +317,8 @@ def _pack_trace_with_ah_dict(tr, packer):
         packer.pack_int(0)
         packer.pack_float(0)
 
-    packer.pack_int(80)
-    packer.pack_fstring(80, tr.stats.ah.event.comment.encode('utf-8'))
+    packer.pack_int(comsize)
+    packer.pack_fstring(comsize, tr.stats.ah.event.comment.encode('utf-8'))
 
     # record info
     dtype = tr.stats.ah.record.type
@@ -325,10 +334,10 @@ def _pack_trace_with_ah_dict(tr, packer):
     packer.pack_int(tr.stats.ah.record.start_time.minute)
     packer.pack_float(tr.stats.ah.record.start_time.second)
     packer.pack_float(tr.stats.ah.record.abscissa_min)
-    packer.pack_int(80)
-    packer.pack_fstring(80, tr.stats.ah.record.comment.encode('utf-8'))
-    packer.pack_int(202)
-    packer.pack_fstring(202, tr.stats.ah.record.log.encode('utf-8'))
+    packer.pack_int(comsize)
+    packer.pack_fstring(comsize, tr.stats.ah.record.comment.encode('utf-8'))
+    packer.pack_int(logsize)
+    packer.pack_fstring(logsize, tr.stats.ah.record.log.encode('utf-8'))
 
     # # extras
     packer.pack_array(tr.stats.ah.extras, packer.pack_float)
@@ -348,19 +357,20 @@ def _pack_trace_with_ah_dict(tr, packer):
     return packer
 
 
-def _pack_trace_wout_ah_dict(tr, packer):
+def _pack_trace_wout_ah_dict(tr, packer, codesize, chansize,
+                             stypesize, comsize, logsize):
     """
     Entry are packed in the same order as shown in
     _pack_trace_with_ah_dict .The missing information
     is replaced with zeros
     station info
     """
-    packer.pack_int(6)
-    packer.pack_fstring(6, tr.stats.station.encode('utf-8'))
-    packer.pack_int(6)
-    packer.pack_fstring(6, tr.stats.channel.encode('utf-8'))
-    packer.pack_int(8)
-    packer.pack_fstring(8, 'null'.encode('utf-8'))
+    packer.pack_int(codesize)
+    packer.pack_fstring(codesize, tr.stats.station.encode('utf-8'))
+    packer.pack_int(chansize)
+    packer.pack_fstring(chansize, tr.stats.channel.encode('utf-8'))
+    packer.pack_int(stypesize)
+    packer.pack_fstring(stypesize, 'null'.encode('utf-8'))
     # There is no information about latitude, longitude, elevation,
     # gain and normalization in the basic stream object,  are set to 0
     packer.pack_float(0)
@@ -387,8 +397,8 @@ def _pack_trace_wout_ah_dict(tr, packer):
     packer.pack_int(0)
     packer.pack_float(0)
 
-    packer.pack_int(80)
-    packer.pack_fstring(80, 'null'.encode('utf-8'))
+    packer.pack_int(comsize)
+    packer.pack_fstring(comsize, 'null'.encode('utf-8'))
 
     # record info
     dtype = type(tr.data[0])
@@ -414,10 +424,10 @@ def _pack_trace_wout_ah_dict(tr, packer):
     packer.pack_float(starttime_second)
 
     packer.pack_float(0)
-    packer.pack_int(80)
-    packer.pack_fstring(80, 'null'.encode('utf-8'))
-    packer.pack_int(202)
-    packer.pack_fstring(202, 'null'.encode('utf-8'))
+    packer.pack_int(comsize)
+    packer.pack_fstring(comsize, 'null'.encode('utf-8'))
+    packer.pack_int(logsize)
+    packer.pack_fstring(logsize, 'null'.encode('utf-8'))
 
     # # extras
     packer.pack_array(np.zeros(21).tolist(), packer.pack_float)
