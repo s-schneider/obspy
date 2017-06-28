@@ -25,6 +25,12 @@ import numpy as np
 from obspy import Stream, Trace, UTCDateTime
 from obspy.core.util.attribdict import AttribDict
 
+AH1_CODESIZE = 6
+AH1_CHANSIZE = 6
+AH1_STYPESIZE = 8
+AH1_COMSIZE = 80
+AH1_LOGSIZE = 202
+
 
 def _is_ah(filename):
     """
@@ -239,19 +245,15 @@ def _write_ah1(stream, filename):
     """
     packer = xdrlib.Packer()
 
-    codesize = 6
-    chansize = 6
-    stypesize = 8
-    comsize = 80
-    logsize = 202
-
     for tr in stream:
         if hasattr(tr.stats, 'ah'):
-            packer = _pack_trace_with_ah_dict(tr, packer, codesize, chansize,
-                                              stypesize, comsize, logsize)
+            packer = _pack_trace_with_ah_dict(
+                tr, packer, AH1_CODESIZE, AH1_CHANSIZE, AH1_STYPESIZE,
+                AH1_COMSIZE, AH1_LOGSIZE)
         else:
-            packer = _pack_trace_wout_ah_dict(tr, packer, codesize, chansize,
-                                              stypesize, comsize, logsize)
+            packer = _pack_trace_wout_ah_dict(
+                tr, packer, AH1_CODESIZE, AH1_CHANSIZE, AH1_STYPESIZE,
+                AH1_COMSIZE, AH1_LOGSIZE)
 
     with open(filename, 'wb') as fh:
         fh.write(packer.get_buffer())
