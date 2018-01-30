@@ -34,7 +34,8 @@ from obspy.clients.fdsn.mass_downloader import (domain, Restrictions,
 from obspy.clients.fdsn.mass_downloader.utils import (
     filter_channel_priority, get_stationxml_filename, get_mseed_filename,
     get_stationxml_contents, SphericalNearestNeighbour, safe_delete,
-    download_stationxml, download_and_split_mseed_bulk)
+    download_stationxml, download_and_split_mseed_bulk,
+    _get_stationxml_contents_slow)
 from obspy.clients.fdsn.mass_downloader.download_helpers import (
     Channel, TimeInterval, Station, STATUS, ClientDownloadHelper)
 
@@ -1007,6 +1008,17 @@ class DownloadHelpersUtilTestCase(unittest.TestCase):
                                  cha.code, cha.start_date, cha.end_date,
                                  filename)])
 
+    def test_fast_vs_slow_get_stationxml_contents(self):
+        """
+        Both should of course return the same result.
+
+        For some old lxml versions both will be using the same function,
+        but this is still a useful test.
+        """
+        filename = os.path.join(self.data, "AU.MEEK.xml")
+        self.assertEqual(get_stationxml_contents(filename),
+                         _get_stationxml_contents_slow(filename))
+
     def test_channel_str_representation(self):
         """
         Test the string representations of channel objects.
@@ -1255,7 +1267,9 @@ class StationTestCase(unittest.TestCase):
 
         with mock.patch("obspy.clients.fdsn.mass_downloader"
                         ".utils.safe_delete") as p1, \
-                mock.patch("obspy.io.mseed.util.get_start_and_end_time") as p2:
+                mock.patch("obspy.io.mseed.util.get_start_and_end_time") \
+                as p2, \
+                mock.patch("os.path.isfile") as p_isfile:  # NOQA
             p2.return_value = (obspy.UTCDateTime(1), obspy.UTCDateTime(2))
             # By default, nothing will happen.
             station.sanitize_downloads(logger)
